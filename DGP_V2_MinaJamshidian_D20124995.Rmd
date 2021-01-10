@@ -1,0 +1,967 @@
+---
+title: "Probability And Statistical Inference Math 9102(TU059)"
+author: "Mina Jamshidian"
+output: html_notebook
+Student Number: D20124995
+R version: 4.0.2 
+---
+
+For using this project the real data from Portuguese Secondary School Student Performance was used.
+* Cortez, Paulo & Silva, Alice. (2008). Using data mining to predict secondary school student performance. EUROSIS.(https://repositorium.sdum.uminho.pt/bitstream/1822/8024/1/student.pdf).
+
+The Dataset:
+the dataset that would be used in this project comes from.("UCI Machine Learning Repository: Student Performance Data Set", 2020)
+* [sperformance-dataset.csv](https://github.com/minajm/Satistics-Interface/blob/main/sperformance-dataset.csv).
+
+
+############# PREPARE ############
+
+ "Can previous student grades and various aspects of student Life predict final grades?"
+
+
+ ## Abstract
+
+This study has been designed to understand that any aspects of student life can impacted on the student grades. This study explores how previous grades can impact on final grades among secondary education  students of two Portuguese schools. Various tests would be conducted to check the rate of final grades for two majors which are Math and Portuguese.
+Our findings suggest that there is a strong association between previous exam result and final result which differs for participants who experienced different levels of study time and travel time.
+
+
+## Introduction:
+
+previous exams result is one of the important factors for the overall evaluation of a person. Any disturbance in the students previous exams can have huge implications on students final result.
+Student exam result can be identified on everyday students life such as whether they have a problem in their life, they have a good study time, they have internet, are they attend to the class normally and etc. 
+In this study, we investigate the impact of various aspects of students lives on previous students result and analysis whether it can lead to final grades among secondary education students of two Portuguese schools, the goal of this study is to close this gap based on analysis of this data.
+
+For the preparation part of the assignment, all appropriate statistical concept for analyzing part would be used, which is consist of: 
+ 
+Populations and samples 
+Describing the sample
+Hypothesis test aims to achieve.
+Understanding of the issues
+Describe the variables 
+
+
+## Populations and samples
+
+The population is the entire items. Access to the whole populations is not possible so the small part of the population which is sample would be used for statistical analysis. The sample would give information about the whole population.
+The dataset that we want to use it for this project is the sample populations about two secondary schools in the Alentejo region of Portugal.
+This sample has 33 variables and 382 records which were collected from school and questions that students answered. This sample is about the performance of two majors (Math and Portuguese language).
+
+## Describing the sample
+
+The variables that exist in the sample populations with their descriptions would be explained in below.
+For this part, the sample would be described by the summary statistics about the variables.
+
+
+
+```{r, warning=FALSE}
+#### Loading Packages
+
+# Loading packages
+library(pander)
+library(pastecs)
+library(tidyverse)
+library(data.table)
+library(cowplot)
+library(summarytools)
+library(ggplot2)
+library(Hmisc)
+library(psych)
+library(gridExtra)
+library(purrr)
+library(gplots)
+library(lsr)
+library(car)
+library(plyr)
+library(lmSupport)
+library(stargazer)
+library(lmtest)
+library(aod)
+
+
+```
+
+```{r, warning=FALSE}
+# Cleaning Work space
+rm(list = ls()) 
+
+data_url <- "https://github.com/minajm/Satistics-Interface/archive/main.zip"
+download.file(data_url,'Satistics-Interface-main.zip')
+unzip('Satistics-Interface-main.zip')
+
+# Importing data
+student_data <- read.csv("Satistics-Interface-main/sperformance-dataset.csv",header=TRUE, stringsAsFactors=TRUE)
+
+# check the column names in the data file
+print(colnames(student_data))
+# check the basic statistical properties of sleep dataframe through summary function
+summary(student_data)
+# check the structure of sleep dataframe
+str(student_data)
+
+
+```
+
+## Variables in the dataset
+The variables that have been used in the dataset are listed below
+
+```{r,warning=FALSE}
+
+# Creating Table
+panderOptions('table.split.table',Inf)
+data_variables<-"
+Variable Name           | Description
+school                  | student's school (binary: 'GP' - Gabriel Pereira or 'MS' - Mousinho da Silveira)
+sex                     | student's sex (binary: 'F' - female or 'M' - male)
+age                     | student's age (numeric: from 15 to 22)
+address                 | student's home address type (binary: 'U' - urban or 'R' - rural)
+famsize                 | family size (binary: 'LE3' - less or equal to 3 or 'GT3' - greater than 3)               
+Pstatus                 | parent's cohabitation status (binary: 'T' - living together or 'A' - apart)
+Medu                    | mother's education (numeric: 0 - none, 1 - primary education (4th grade), 2 â€“ 5th to 9th grade, 3 â€“ secondary education or 4 â€“ higher education)
+Fedu                    | father's education (numeric: 0 - none, 1 - primary education (4th grade), 2 â€“ 5th to 9th grade, 3 â€“ secondary education or 4 â€“ higher education)
+Mjob                    | mother's job (nominal: 'teacher', 'health' care related, civil 'services' (e.g. administrative or police), 'at_home' or 'other')
+Fjob                    | father's job (nominal: 'teacher', 'health' care related, civil 'services' (e.g. administrative or police), 'at_home' or 'other')
+reason                  | reason to choose this school (nominal: close to 'home', school 'reputation', 'course' preference or 'other')
+guardian                | student's guardian (nominal: 'mother', 'father' or 'other')
+traveltime              | home to school travel time (numeric: 1 - <15 min., 2 - 15 to 30 min., 3 - 30 min. to 1 hour, or 4 - >1 hour)
+studytime               | weekly study time (numeric: 1 - <2 hours, 2 - 2 to 5 hours, 3 - 5 to 10 hours, or 4 - >10 hours)
+failures                | number of past class failures (numeric: n if 1<=n<3, else 4)
+schoolsup               | extra educational support (binary: yes or no)
+famsup                  | family educational support (binary: yes or no)
+paid                    | extra paid classes within the course subject (Math or Portuguese) (binary: yes or no)
+activities              | extra-curricular activities (binary: yes or no)
+nursery                 | attended nursery school (binary: yes or no)
+higher                  | wants to take higher education (binary: yes or no)
+internet                | Internet access at home (binary: yes or no)
+romantic                | with a romantic relationship (binary: yes or no)
+famrel                  | quality of family relationships (numeric: from 1 - very bad to 5 - excellent)
+freetime                | free time after school (numeric: from 1 - very low to 5 - very high)
+goout                   | going out with friends (numeric: from 1 - very low to 5 - very high)
+Dalc                    | workday alcohol consumption (numeric: from 1 - very low to 5 - very high)
+Walc                    | weekend alcohol consumption (numeric: from 1 - very low to 5 - very high)
+health                  | current health status (numeric: from 1 - very bad to 5 - very good)
+absences                | number of school absences (numeric: from 0 to 93)
+G1                      | first period grade (numeric: from 0 to 20)
+G2                      | second period grade (numeric: from 0 to 20)
+G3                      | final grade (numeric: from 0 to 20, output target)
+"
+
+df<-read.delim(textConnection(data_variables),header = FALSE,sep = '|',strip.white = TRUE,stringsAsFactors = FALSE)
+names(df)<-unname(as.list(df[1,]))
+df<-df[-1,]
+row.names(df)<-NULL
+pander(df,style='rmarkdown')
+
+```
+# Research Questions and Hypothesis
+The goal of this research is finding the relationship between student grade in two majors (Math and Portuguese) at secondary school and several aspects of student life.
+Research Questions:
+ Can the student’s final grades ( Math and Portuguese major) be predicted by the previous grades,  students study time,  students travel time and are there a difference for male and female students?
+For finding the answer to the main question and getting good information about the data we have to answer some questions:
+1.What is the average of the previous student's grade?
+2.What is the frequency distribution of study time?
+3.What is the relationship between Final grades and average of previous grades?
+Hypothesis 1
+H0: there is no relationship between students Average previous grades and final grade for Portuguese major.
+H1: there is a relationship between students Average previous grades and final grade for Portuguese major.
+Hypothesis 2
+H0: there is no relationship between students Average previous grades and the final grade for Math major.
+H1: there is a relationship between students Average previous grades and the final grade for Math major.
+4.What is the difference between study time and final grade?
+Hypothesis 3
+H0: There is no difference in Final Portuguese Grade of students and their study time.
+HA: There is a difference in Final Portuguese Grade of students and their study time.
+Hypothesis 4
+H0: There is no difference in Final Math Grade of students and their study time.
+HA: There is a difference in Final Math Grade of students and their study time.
+5.What is the difference between students gender and final grade?
+Hypothesis 5:
+H0: There is no difference in Final grades of Portuguese major for a female and male student.
+HA: There is a difference in Final grades of Portuguese major for a female and male student.
+Hypothesis 6:
+H0: There is no difference in Final grades of Math major for a female and male student.
+HA: There is a difference in Final grades of Math major for a female and male student.
+
+Variables of interest
+The variables that were interested in this project are shown below:
+
+```{r, warning=FALSE}
+# Create table
+panderOptions('table.split.table',Inf)
+data_variable2<-"
+Concept                     | Variable Name | Statistical Type | Possible Values
+first period grade          |  G1           |   Numeric        | Range from 0 to 20
+second period grade         |  G2           |   Numeric        | Range from 0 to 20
+final grade                 |  G3           |   Numeric        | Range from 0 to 20
+weekly study time           |  traveltime   |   Categorical    | 1 - <2 hours, 2 - 2 to 5 hours, 3 - 5 to 10 hours, or 4 - >10 hours
+home to school travel time  |  studytime    |   Categorical    | 1 - <15 min., 2 - 15 to 30 min., 3 - 30 min. to 1 hour, or 4 - >1 hour
+student's sex               |  sex          |   Categorical    | 'F' - female or 'M' - male
+"
+
+
+df<-read.delim(textConnection(data_variable2),header = FALSE,sep = '|',strip.white = TRUE,stringsAsFactors = FALSE)
+names(df)<-unname(as.list(df[1,]))
+df<-df[-1,]
+row.names(df)<-NULL
+pander(df,style='rmarkdown')
+
+```
+## Understanding Of The Issues
+
+In order to use this dataset, two features of the dataset must be met. First of all, the dataset should be large enough and secondly, it should be representative of the real characteristics. The sample dataset is not sufficient to be used as a sample of the general population of students attending Portuguese Secondary Schools. Two main features required for the sample to be sufficient are the size of the sample and whether or not it is representative. 
+
+The size of the sample is important to make sure both the sample and real population have the same features that we are looking for. Also, the dataset must be representative because it should have and show the same exact behavior or characteristics of the actual population. 
+
+It is important to understand that the purpose of the grades in the dataset is to understand student capability and core skills of the subject but this data is hard to extract because some students may have had health issues on the day of the exam. It is important to consider this fact can introduce bias.
+
+Although 37 questions were asked and reviewed prior to the test, there could be some variables which have not been accounted for. The lack of sufficient variables can also impact the accuracy and correctness of our analysis.
+
+Furthermore, the exam was taken on paper documents rather than using a software. This may also introduce some errors to the scoring system because some papers may have had errors during examination or they could have not been reviewed correctly (human errors).
+
+
+## Quantitative Variable:
+
+Each of the variables of interest were inspected. The numeric variables of interest, those representing all students grades, were inspected for normality by checking standardised scores for skewness and kurtosis as well as considering the percentage of standardised scores for the variables fell outside of expected boundaries and creating histograms and QQ plots. Decisions on skewness and kurtosis were guided by the advice of (George & Mallory, 2011) which categorizes a distribution as normal if the relevant standardised scores for skewness and kurtosis fall in the range +/- 2 and the advice of (Field, Miles & Field, 2012) which categorizes a distribution as normal if 95% of the standardised scores for the variable fall within the bounds of +/-3.29 for a dataset larger than 80 cases. Summary statistics of various nominal variables were also identified for analysis.
+
+
+Quantitative variables description for this dataset:
+
+```{r warning=FALSE, fig.width=10, fig.align='center'}
+#  Selecting just the quantitative variables from dataset
+q_var <- student_data %>% select(pG1,pG2,pG3,mG1,mG2,mG3)
+q_var
+
+describe(q_var,IQR = TRUE,omit = TRUE)
+
+# Distribution of numeric variable with visualization
+g4<-ggplot(q_var,aes(x=pG1))+labs(x='PG1', y='Density')+
+  geom_histogram(binwidth = 1,colour='black',aes(y=..density..,fill=..count..))+
+  scale_fill_gradient("Count",low="#132B43", high="#56B1F7")+
+  stat_function(fun = dnorm,color="red",args = list(mean=mean(q_var$pG1,na.rm = TRUE),sd=sd(q_var$pG1,na.rm = TRUE)))+
+  ggtitle('Distribution PG1')
+g4
+g5<-ggplot(q_var,aes(x=pG2))+labs(x='PG2', y='Density')+
+  geom_histogram(binwidth = 1,colour='black',aes(y=..density..,fill=..count..))+
+  scale_fill_gradient("Count",low="#132B43", high="#56B1F7")+
+  stat_function(fun = dnorm,color="red",args = list(mean=mean(q_var$pG2,na.rm = TRUE),sd=sd(q_var$pG2,na.rm = TRUE)))+
+  ggtitle('Distribution PG2')
+g5
+g6<-ggplot(q_var,aes(x=pG3))+labs(x='PG3', y='Density')+
+  geom_histogram(binwidth = 1,colour='black',aes(y=..density..,fill=..count..))+
+  scale_fill_gradient("Count",low="#132B43", high="#56B1F7")+
+  stat_function(fun = dnorm,color="red",args = list(mean=mean(q_var$pG3,na.rm = TRUE),sd=sd(q_var$pG3,na.rm = TRUE)))+
+  ggtitle('Distribution PG3')
+g6
+g7<-ggplot(q_var,aes(x=mG1))+labs(x='MG1', y='Density')+
+  geom_histogram(binwidth = 1,colour='black',aes(y=..density..,fill=..count..))+
+  scale_fill_gradient("Count",low="#132B43", high="#56B1F7")+
+  stat_function(fun = dnorm,color="red",args = list(mean=mean(q_var$mG1,na.rm = TRUE),sd=sd(q_var$mG1,na.rm = TRUE)))+
+  ggtitle('Distribution MG1')
+g7
+g8<-ggplot(q_var,aes(x=mG2))+labs(x='MG2', y='Density')+
+  geom_histogram(binwidth = 1,colour='black',aes(y=..density..,fill=..count..))+
+  scale_fill_gradient("Count",low="#132B43", high="#56B1F7")+
+  stat_function(fun = dnorm,color="red",args = list(mean=mean(q_var$mG2,na.rm = TRUE),sd=sd(q_var$mG2,na.rm = TRUE)))+
+  ggtitle('Distribution MG2')
+g8
+g9<-ggplot(q_var,aes(x=mG3))+labs(x='MG3', y='Density')+
+  geom_histogram(binwidth = 1,colour='black',aes(y=..density..,fill=..count..))+
+  scale_fill_gradient("Count",low="#132B43", high="#56B1F7")+
+  stat_function(fun = dnorm,color="red",args = list(mean=mean(q_var$mG3,na.rm = TRUE),sd=sd(q_var$mG3,na.rm = TRUE)))+
+  ggtitle('Distribution MG3')
+g9
+grid.arrange(g4,g5,g6,g7,g8,g9,nrow=3)
+```
+## Categorical Variables:
+
+In this dataset, 28 categorical (qualitative) variables exist that they would be described the dataset. They would help us in dividing our sample on the essential characteristics of the sample set. Most of the categorical variable in this dataset is nominal by number.
+The numerical category variables would not be like the quantitative variable because the number value for them just have the meaning code. So this type of variables could be described by frequently and terms of values.
+Just these qualitative variables from the sample population would be used for this project: studytime, famsize, goout, Dalc, Fedu, Medu.
+The statistics summarization for these variables would be described in below.
+
+Categorical variables description for this dataset:
+```{r, warning=FALSE, fig.width=10, fig.align='center'}
+#  Selecting just the categorical variables from dataset that do not repeated 
+c_var <- student_data %>% select(school,sex,address,famsize,Pstatus,Medu,Fedu,
+                                 Mjob,Fjob,reason,nursery,internet,guardian.p,
+                                 traveltime.p,studytime.p,failures.p,schoolsup.p,
+                                 famsup.p,paid.p,activities.p,higher.p,romantic.p,
+                                 famrel.p,freetime.p,goout.p,Dalc.p,Walc.p,health.p)
+# Statistics Summarization
+freq(c_var)
+
+# Statistics Summarization by visualization
+c_var %>%
+  gather() %>%
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free") +
+    geom_bar(colour = "black", aes(y = ..prop.., group =1, fill = ..count..))+
+    scale_fill_gradient("Count",low="#132B43", high="#56B1F7")
+
+
+```
+
+
+############# EXplore And Model ############
+
+
+
+## Normality
+
+All the numerical variables of interest would be inspected for normality by checking standardized scores for skewness and kurtosis and also the percentage of standardized scores for those variables would be analysed. For more analysing the QQ plot and Histogram would be tested. For the final decision about the skewness and kurtosis, the reference of (George & Mallory, 2011) would be used which would be told us the normal distribution and standardized scores for skewness and kurtosis is between [ +/- 2] range and this paper (Field, Miles & Field, 2012) is telling to us a normal distribution is normal when 95% of the standardized scores for the variable is between the [+/-3.29] bounds which is used for a dataset with  more than 80 cases. And the other statistics summarizing would be used as well for more analysing.
+
+
+```{r, warning=FALSE, fig.width=10, fig.align='center'}
+# Selecting the grades variable
+grades <- student_data %>% select(pG1,pG2,pG3,mG1,mG2,mG3)
+
+# create a custom variable called previous grades for Portuguese language(pG12)
+pG12<-round((student_data$pG1+student_data$pG2)/2,0)
+
+# create a custom variable called previous grade for Math(mG12)
+mG12<-round((student_data$mG1+student_data$mG2)/2,0)
+
+# add pG12 and mG12 variable to data as new column 
+grades <- grades %>% 
+  mutate(pG12,mG12) %>%
+  select(-c(pG1,pG2,mG1,mG2))
+student_data$pG12 <-pG12
+student_data$mG12 <-mG12
+student_data
+student_data <-student_data %>% mutate(pG12,mG12)
+student_data
+describe(grades$pG1)
+
+grades_d<-describe(grades,omit = TRUE, IQR = TRUE)
+grades_s<-pastecs::stat.desc(grades, basic = FALSE)
+grades_st <- grades_s  %>% transpose()
+rownames(grades_st) <- colnames(grades_s)
+colnames(grades_st) <- rownames(grades_s)
+
+stdskew <- list()
+stdkurt <- list()
+gt196 <- list()
+gt329 <- list()
+
+for (n in 1:4) {
+  v <- row.names.data.frame(grades_st)[n]
+
+  skew        <- semTools::skew(grades[[v]])
+  kurt        <- semTools::kurtosis(grades[[v]])
+  stdskew[[v]] <- skew[1] / skew[2]
+  stdkurt[[v]] <- kurt[1] / kurt[2]
+  zscore        <- abs(scale(grades[[v]]))
+  gt196[[v]]   <- FSA::perc(as.numeric(zscore), 1.96, "gt")
+  gt329[[v]]   <- FSA::perc(as.numeric(zscore), 3.29, "gt")
+
+}
+
+grades_st$skew <- skew
+grades_st$kurt <- kurt
+grades_st$std.skew <- stdskew
+grades_st$std.kurt <- stdkurt
+grades_st$gt.196 <- gt196
+grades_st$gt.329 <- gt329
+grades_st
+
+
+# Distribution of grades variable with visualization
+g1<-ggplot(grades,aes(x=pG12))+labs(x='PG12', y='Density')+
+  geom_histogram(binwidth = 2,colour='black',aes(y=..density..,fill=..count..))+
+  scale_fill_gradient("Count",low="#132B43", high="#56B1F7")+
+  stat_function(fun = dnorm,color="red",args = list(mean=mean(q_var$pG1,na.rm = TRUE),sd=sd(q_var$pG1,na.rm = TRUE)))+
+  ggtitle('Distribution Average previous Grade in Portuguese languag')+
+  theme(plot.title = element_text(size=10))
+
+g3<-ggplot(grades,aes(x=pG3))+labs(x='PG3', y='Density')+
+  geom_histogram(binwidth = 1,colour='black',aes(y=..density..,fill=..count..))+
+  scale_fill_gradient("Count",low="#132B43", high="#56B1F7")+
+  stat_function(fun = dnorm,color="red",args = list(mean=mean(q_var$pG3,na.rm = TRUE),sd=sd(q_var$pG3,na.rm = TRUE)))+
+  ggtitle('Distribution Final Grade in Portuguese languag')+
+  theme(plot.title = element_text(size=10))
+
+g4<-ggplot(grades,aes(x=mG12))+labs(x='MG12', y='Density')+
+  geom_histogram(binwidth = 2,colour='black',aes(y=..density..,fill=..count..))+
+  scale_fill_gradient("Count",low="#132B43", high="#56B1F7")+
+  stat_function(fun = dnorm,color="red",args = list(mean=mean(q_var$mG1,na.rm = TRUE),sd=sd(q_var$mG1,na.rm = TRUE)))+
+  ggtitle('Distribution Average previous Grade in Math')+
+  theme(plot.title = element_text(size=10))
+
+g6<-ggplot(grades,aes(x=mG3))+labs(x='MG3', y='Density')+
+  geom_histogram(binwidth = 1,colour='black',aes(y=..density..,fill=..count..))+
+  scale_fill_gradient("Count",low="#132B43", high="#56B1F7")+
+  stat_function(fun = dnorm,color="red",args = list(mean=mean(q_var$mG3,na.rm = TRUE),sd=sd(q_var$mG3,na.rm = TRUE)))+
+  ggtitle('Distribution Final Grade in Math')+
+  theme(plot.title = element_text(size=10))
+
+grid.arrange(g1,g4,g3,g6,nrow=2)
+
+# Create QQ Plot for previous grades for Portuguese language(pG12)
+qqnorm(grades$pG12, main = "QQplot previous grades for Portuguese language(pG12)")
+qqline(grades$pG12,col=2) # show line on the plot
+
+# Create QQ Plot for previous grades for Portuguese language(pG12)
+qqnorm(grades$mG12, main = "QQplot previous grade for Math(mG12)")
+qqline(grades$mG12,col=2) # show line on the plot
+
+# Create QQ Plot for final grades for Portuguese language(pG3)
+qqnorm(grades$pG3, main = "QQplot final grades for Portuguese language(pG3)")
+qqline(grades$pG3,col=2) # show line on the plot
+
+# Create QQ Plot for final grades for Math(mG3)
+qqnorm(grades$mG3, main = "QQplot final grades for Math(mG3)")
+qqline(grades$mG3,col=2) # show line on the plot
+
+```
+## Report of Normality befor transformation
+
+The final Portuguese grades are represented by a numeric variable in the dataset. Inspection of the standardised scores for skewness and kurtosis reveal that the kurtosis score (*kurtosis* = 13.9, *SE* = .25) and the skewness score (*skewness* = -7.95, *SE* = .125) is out of that range which is the range of -2 and 2. This implies that kurtosis and skewness are not normal. For further inspection using plots such as histogram and normality plot, we found that the distribution is negatively skewed and not normalized. there are various values deviating from the normality line. On inspection of the count of outliers, there was found 1.57% standardised scores were outside the acceptable range of [-3.29, +3.29] that shows almost none of the values is outside the 95% Confidence Interval. In total, based on all the tests, it can be said that the data for the final Portuguese grades variable will not be treated as a normal within this analysis. (*Median*=`r median(grades$pG1,na.rm = TRUE)`, *IQR*=`r IQR(grades$pG1,na.rm = TRUE)`,*M* = `r mean(grades$pG1, na.rm=TRUE)`, *SD* = `r sd(grades$pG1, na.rm=TRUE)`,  *N* = `r length(grades$pG1)-sum(is.na(grades$pG1))`).
+
+The final Math grades are represented by a numeric variable in the dataset. Inspection of the standardised scores for skewness and kurtosis reveal that the kurtosis score (*kurtosis* = 1.1, *SE* = .25) and the skewness score (*skewness* = -5.6, *SE* = .125) is out of that range which is the range of -2 and 2. This implies that kurtosis is normal but the skewness are not normal. For further inspection using plots such as histogram and normality plot, we found that the distribution is negatively skewed and not normalized. there are various values deviating from the normality line. On inspection of the count of outliers, there was found 0% standardised scores were outside the acceptable range of [-3.29, +3.29] that shows  none of the values is outside the 95% Confidence Interval. In total, based on all the tests, it can be said that the data for the final Math grades variable will not be treated as a normal within this analysis. (*Median*=`r median(grades$mG1,na.rm = TRUE)`, *IQR*=`r IQR(grades$mG1,na.rm = TRUE)`,*M* = `r mean(grades$mG1, na.rm=TRUE)`, *SD* = `r sd(grades$mG1, na.rm=TRUE)`,  *N* = `r length(grades$mG1)-sum(is.na(grades$mG1))`).
+
+The average previous Portuguese grades are represented by a numeric variable in the dataset. Inspection of the standardised scores for skewness and kurtosis reveal that the kurtosis score (*kurtosis* = -.85, *SE* = .25) and the skewness score (*skewness* = 1.76, *SE* = .125) is not out of that range which is the range of -2 and 2. This implies that kurtosis and skewness are  normal. For further inspection using plots such as histogram and normality plot, we found that the distribution is mot and not normalized. there are various values deviating from the normality line. On inspection of the count of outliers, there was found 0% standardised scores were outside the acceptable range of [-3.29, +3.29] that shows  none of the values is outside the 95% Confidence Interval. In total, based on all the tests, it can be said that the data for the average previous Portuguese grades variable will be treated as a normal within this analysis. (*Median*=`r median(grades$pG12,na.rm = TRUE)`, *IQR*=`r IQR(grades$pG12,na.rm = TRUE)`,*M* = `r mean(grades$pG12, na.rm=TRUE)`, *SD* = `r sd(grades$pG12, na.rm=TRUE)`,  *N* = `r length(grades$pG12)-sum(is.na(grades$pG12))`).
+
+The average previous math grades are represented by a numeric variable in the dataset. Inspection of the standardised scores for skewness and kurtosis reveal that the kurtosis score (*kurtosis* = -1.79, *SE* = .25) and the skewness score (*skewness* = 0.46, *SE* = .125) is not out of that range which is the range of -2 and 2. This implies that kurtosis and skewness are  normal. For further inspection using plots such as histogram and normality plot, we found that the distribution is not skewed and  normalized. there are various values deviating from the normality line. On inspection of the count of outliers, there was found 0% standardised scores were outside the acceptable range of [-3.29, +3.29] that shows  none of the values is outside the 95% Confidence Interval. In total, based on all the tests, it can be said that the data for the average previous math grades variable will be treated as a normal within this analysis. (*Median*=`r median(grades$mG12,na.rm = TRUE)`, *IQR*=`r IQR(grades$mG12,na.rm = TRUE)`,*M* = `r mean(grades$mG12, na.rm=TRUE)`, *SD* = `r sd(grades$mG12, na.rm=TRUE)`,  *N* = `r length(grades$mG12)-sum(is.na(grades$mG12))`).
+
+
+
+As per the inspection of all grades, we found that final grades for math and Portuguese should be treated as non-normal. students with no grades is a big problem in database because some of the have the grades for previous grade and don't have any grades for final grades and vice versa.Therefor for next part just the grades bigger than zero would be considered.
+
+## Normality After Transformation
+```{r, warning=FALSE, fig.width=10, fig.align='center'}
+# select all grates than are biger than 0
+
+ngrades <- grades %>% filter(pG12>0,pG3>0,mG3>0,mG12>0)
+ngrades_d<-describe(ngrades,omit = TRUE, IQR = TRUE)
+ngrades_s<-pastecs::stat.desc(ngrades, basic = FALSE)
+ngrades_st <- ngrades_s  %>% transpose()
+rownames(ngrades_st) <- colnames(ngrades_s)
+colnames(ngrades_st) <- rownames(ngrades_s)
+
+stdskew <- list()
+stdkurt <- list()
+gt196 <- list()
+gt329 <- list()
+
+for (n in 1:4) {
+  v <- row.names.data.frame(ngrades_st)[n]
+
+  skew        <- semTools::skew(ngrades[[v]])
+  kurt        <- semTools::kurtosis(ngrades[[v]])
+  stdskew[[v]] <- skew[1] / skew[2]
+  stdkurt[[v]] <- kurt[1] / kurt[2]
+  zscore        <- abs(scale(ngrades[[v]]))
+  gt196[[v]]   <- FSA::perc(as.numeric(zscore), 1.96, "gt")
+  gt329[[v]]   <- FSA::perc(as.numeric(zscore), 3.29, "gt")
+
+}
+
+ngrades_st$skew <- skew
+ngrades_st$kurt <- kurt
+ngrades_st$std.skew <- stdskew
+ngrades_st$std.kurt <- stdkurt
+ngrades_st$gt.196 <- gt196
+ngrades_st$gt.329 <- gt329
+ngrades_st
+
+# Distribution of grades variable with visualization After Transformation
+g1<-ggplot(ngrades,aes(x=pG12))+labs(x='PG12', y='Density')+
+  geom_histogram(binwidth = 2,colour='black',aes(y=..density..,fill=..count..))+
+  scale_fill_gradient("Count",low="#132B43", high="#56B1F7")+
+  stat_function(fun = dnorm,color="red",args = list(mean=mean(q_var$pG1,na.rm = TRUE),sd=sd(q_var$pG1,na.rm = TRUE)))+
+  ggtitle('Distribution Average previous Grade in Portuguese languag')+
+  theme(plot.title = element_text(size=10))
+
+g3<-ggplot(ngrades,aes(x=pG3))+labs(x='PG3', y='Density')+
+  geom_histogram(binwidth = 2,colour='black',aes(y=..density..,fill=..count..))+
+  scale_fill_gradient("Count",low="#132B43", high="#56B1F7")+
+  stat_function(fun = dnorm,color="red",args = list(mean=mean(q_var$pG3,na.rm = TRUE),sd=sd(q_var$pG3,na.rm = TRUE)))+
+  ggtitle('Distribution Final Grade in Portuguese languag')+
+  theme(plot.title = element_text(size=10))
+
+g4<-ggplot(ngrades,aes(x=mG12))+labs(x='MG12', y='Density')+
+  geom_histogram(binwidth = 2,colour='black',aes(y=..density..,fill=..count..))+
+  scale_fill_gradient("Count",low="#132B43", high="#56B1F7")+
+  stat_function(fun = dnorm,color="red",args = list(mean=mean(q_var$mG1,na.rm = TRUE),sd=sd(q_var$mG1,na.rm = TRUE)))+
+  ggtitle('Distribution Average previous Grade in Math')+
+  theme(plot.title = element_text(size=10))
+
+g6<-ggplot(grades,aes(x=mG3))+labs(x='MG3', y='Density')+
+  geom_histogram(binwidth = 2,colour='black',aes(y=..density..,fill=..count..))+
+  scale_fill_gradient("Count",low="#132B43", high="#56B1F7")+
+  stat_function(fun = dnorm,color="red",args = list(mean=mean(q_var$mG3,na.rm = TRUE),sd=sd(q_var$mG3,na.rm = TRUE)))+
+  ggtitle('Distribution Final Grade in Math')+
+  theme(plot.title = element_text(size=10))
+
+
+grid.arrange(g1,g4,g3,g6,nrow=2)
+
+# Checking Normality by QQ-Plot After Transformation
+# Create QQ Plot for previous grades for Portuguese language(pG12)
+qqnorm(ngrades$pG12, main = "QQplot previous grades for Portuguese language(pG12)")
+qqline(ngrades$pG12,col=2) # show line on the plot
+
+# Create QQ Plot for previous grades for Portuguese language(pG12)
+qqnorm(ngrades$mG12, main = "QQplot previous grade for Math(mG12)")
+qqline(ngrades$mG12,col=2) # show line on the plot
+
+# Create QQ Plot for final grades for Portuguese language(pG3)
+qqnorm(ngrades$pG3, main = "QQplot final grades for Portuguese language(pG3)")
+qqline(ngrades$pG3,col=2) # show line on the plot
+
+# Create QQ Plot for final grades for Math(mG3)
+qqnorm(ngrades$mG3, main = "QQplot final grades for Math(mG3)")
+qqline(ngrades$mG3,col=2) # show line on the plot
+
+
+```
+## Report Of Normality
+
+
+The final Portuguese grades are represented by a numeric variable in the dataset. Inspection of the standardised scores for skewness and kurtosis reveal that the kurtosis score (*kurtosis* = 3.06, *SE* = .25) is out of that range which is the range of -2 and 2 and the skewness score (*skewness* = -1.43, *SE* = .125) is not out of that range which is the range of -2 and 2. This implies that kurtosis is not normal and skewness is normal. For further inspection using plots such as histogram and normality plot, we found that the distribution is a bit negatively skewed and we cant say not normalized. there are various values deviating from the normality line. On inspection of the count of outliers, there was found 0.29% standardised scores were outside the acceptable range of [-3.29, +3.29] that shows almost none of the values is outside the 95% Confidence Interval. In total, based on all the tests, it can be said that the data for the final Portuguese grades variable will not be treated as normal within this analysis. (*Median*=`r median(grades$pG1,na.rm = TRUE)`, *IQR*=`r IQR(grades$pG1,na.rm = TRUE)`,*M* = `r mean(grades$pG1, na.rm=TRUE)`, *SD* = `r sd(grades$pG1, na.rm=TRUE)`,  *N* = `r length(grades$pG1)-sum(is.na(grades$pG1))`).
+
+The final Math grades are represented by a numeric variable in the dataset. Inspection of the standardised scores for skewness and kurtosis reveal that the kurtosis score (*kurtosis* = -1.72, *SE* = .25) and the skewness score (*skewness* = 1.63, *SE* = .125) is out not of that range which is the range of -2 and 2. This implies that kurtosis and skewness are normal. For further inspection using plots such as histogram and normality plot, we found that the distribution is not skewed and normalized. there are various values deviating from the normality line. On inspection of the count of outliers, there was found 0% standardised scores were outside the acceptable range of [-3.29, +3.29] that shows none of the values is outside the 95% Confidence Interval. In total, based on all the tests, it can be said that the data for the final Math grades variable will not be treated as normal within this analysis. (*Median*=`r median(grades$mG1,na.rm = TRUE)`, *IQR*=`r IQR(grades$mG1,na.rm = TRUE)`,*M* = `r mean(grades$mG1, na.rm=TRUE)`, *SD* = `r sd(grades$mG1, na.rm=TRUE)`,  *N* = `r length(grades$mG1)-sum(is.na(grades$mG1))`).
+
+The average previous Portuguese grades are represented by a numeric variable in the dataset. Inspection of the standardised scores for skewness and kurtosis reveal that the kurtosis score (*kurtosis* = -1.08, *SE* = .25) is not out of that range which is the range of -2 and 2 and the skewness score (*skewness* = 2.18, *SE* = .125) is a bit out of that range which is the range of -2 and 2. This implies that kurtosis is normal and skewness is a bit not normal which can consider it is normal. For further inspection using plots such as histogram and normality plot, we found that the distribution is not skewd and  normalized. there are various values deviating from the normality line. On inspection of the count of outliers, there was found 0% standardised scores were outside the acceptable range of [-3.29, +3.29] that shows none of the values is outside the 95% Confidence Interval. In total, based on all the tests, it can be said that the data for the average previous Portuguese grades variable will not be treated as normal within this analysis. (*Median*=`r median(grades$pG12,na.rm = TRUE)`, *IQR*=`r IQR(grades$pG12,na.rm = TRUE)`,*M* = `r mean(grades$pG12, na.rm=TRUE)`, *SD* = `r sd(grades$pG12, na.rm=TRUE)`,  *N* = `r length(grades$pG12)-sum(is.na(grades$pG12))`).
+
+The average previous math grades are represented by a numeric variable in the dataset. Inspection of the standardised scores for skewness and kurtosis reveal that the kurtosis score (*kurtosis* = -2.52, *SE* = .25) is a bit out of that range which is the range of -2 and 2 and the skewness score (*skewness* = 1.74, *SE* = .125) is not out of that range which is the range of -2 and 2. This implies that kurtosis is not normal and skewness is normal. For further inspection using plots such as histogram and normality plot, we found that the distribution is not skewed and normalized. there are various values deviating from the normality line. On inspection of the count of outliers, there was found 0% standardised scores were outside the acceptable range of [-3.29, +3.29] that shows none of the values is outside the 95% Confidence Interval. In total, based on all the tests, it can be said that the data for the average previous math grades variable will not be treated as normal within this analysis. (*Median*=`r median(grades$mG12,na.rm = TRUE)`, *IQR*=`r IQR(grades$mG12,na.rm = TRUE)`,*M* = `r mean(grades$mG12, na.rm=TRUE)`, *SD* = `r sd(grades$mG12, na.rm=TRUE)`,  *N* = `r length(grades$mG12)-sum(is.na(grades$mG12))`).
+
+In total, because the missing data outliers were removed it would be considered that all grades variables would be treated as normally distributed
+
+
+
+Hypothesis 1
+
+H0: there is no relationship between students Average previous grades and final grade for Portuguese major.
+H1: there is a relationship between students Average previous grades and final grade for Portuguese major.
+
+Pearson Correlation needs that the two variables have a linear relationship since Pearson uses the line equation to model the relationship. This state is confirmed by a scatter plot analysis, that would represent a straight line instead of a curved line. 
+the 0.05 for n alpha level was accepted and Cohen's conventions on effect size which is r were adopted for the Pearson Correlation Test. By Considering the Cohen, if the r-value of varies around 0.1 then the effect size is low, if r varies around 0.3 then the effect size is medium, and if the r varies is more than 0.5 then the effect size is large (Field, Miles & Field, 2012).
+
+
+```{r, warning=FALSE, fig.width=10, fig.align='center'}
+# Pearson Correlation test for normal data distribution
+cor.test(ngrades$pG12,ngrades$pG3,method = 'pearson')
+# (r=0.89, n=338, p= 2.2e-16)
+
+# Create scatter plot
+s1<-ggplot()+aes(x=ngrades$pG12,y=ngrades$pG3)
+s1<-s1+geom_point()+geom_smooth(method = 'lm',colour='red',se = FALSE)+
+  labs(x='Average of Previous portuguese Grade',y='Final portuguese Grade')+ 
+  ggtitle('Correlation between Average of Previous portuguese Grade and Final Portuguese Grade')+
+  theme(plot.title = element_text(size=12))
+
+s1
+
+# calculate covariance
+na.omit(ngrades$pG12,ngrades$pG3)
+cov_p <- cov(ngrades$pG12,ngrades$pG3,method = "pearson")
+cov_p
+```
+## Report of Correlation Analysis
+
+The relationship between Final Portuguese Grades  and Average previous Portuguese Grades (that comes from average of pG1 and pG2) was investigated using a Pearson Correlation Test. A higher than moderate positive correlation was found with an effect size of 0.89  and the relationship is positive between both variables  (*r* = 0.89, *n* = 338, *p* = 2.2e-16).The scatter plot validate this correlation. Final Portuguese Grades and and Average previous Portuguese Grades have shared variance ($(r^2)*100$) of 79% and covariance of `r cov_p` . From the correlation test, we found the p-value (2.2e-16) less than the significance level of .05 which shows that the null hypothesis can be rejected. So, based on the result of test and scatter plot, we can say  that there is a positive correlation between Final Portuguese Grades  and Average previous Portuguese Grades . 
+So in total we can say that this relationship is genuine and it is not by chance.
+
+
+Hypothesis 2
+
+H0: there is no relationship between students Average previous grades and final grade for Math major.
+H1: there is a relationship between students Average previous grades and final grade for Math major.
+
+the 0.05 for n alpha level was accepted and Cohen's conventions on effect size which is r was adopted for Pearson Correlation Test. By Considering the Cohen, if the r value of varies around 0.1 then the effect size is low, if r varies around 0.3 then the effect size is medium, and if the r varies is more than 0.5 then the effect size is large (Field, Miles & Field, 2012).
+
+```{r, warning=FALSE, fig.width=10, fig.align='center'}
+# Pearson Correlation test for normal data distribution
+cor.test(ngrades$mG12,ngrades$mG3,method = 'pearson')
+# (r=-0.94, n=338, p= 2.2e-16)
+
+# Create scatter plot
+s2<-ggplot()+aes(x=ngrades$mG12,y=ngrades$mG3)
+s2<-s2+geom_point()+geom_smooth(method = 'lm',colour='red',se = FALSE)+
+  labs(x='Average of Previous Math Grade',y='Final Math Grade')+ 
+  ggtitle('Correlation between Average of Previous Math Grade and Math Final Math Grade ')+
+  theme(plot.title = element_text(size=12))
+s2
+
+# calculate covariance
+na.omit(ngrades$mG12,ngrades$mG3)
+cov_m <- cov(ngrades$mG12,ngrades$mG3,method = "pearson")
+cov_m
+
+```
+
+## Report of Correlation Analysis
+
+The relationship between Final Math Grades and Average previous Math Grades (that comes from the average of mG1 and mG2) was investigated using a Pearson Correlation Test. A higher than moderate positive correlation was found with an effect size of 0.89 and the relationship is positive between both variables (*r* = 0.94, *n* = 338, *p* = 2.2e-16). The scatter plot also validates this correlation. Final Math Grades and Average previous Math Grades have shared variance ($(r^2)*100$) of 88% and covariance of `r cov_m`. From the correlation test, we found the p-value (2.2e-16) less than the significance level of .05 which shows that the null hypothesis can be rejected. So, based on the result of the test and scatter plot, we can say that there is a positive correlation between Final Math Grades and Average previous Math Grades. So in total, we can say that this relationship is genuine and it is not by chance.
+
+
+Hypothesis 3
+
+H0: There is no difference in Final Portuguese Grade of students and their study time.
+HA: There is a difference in Final Portuguese Grade of students and their study time.
+
+An alpha level .05 was considered and by  Cohen's conventions on effect size which is eta-squared, would be used for ANOVA Test.
+By considering the Cohen, if the value of eta-squared varies around .01 then the effect size is low , if eta-squared varies around .06 then the effect size is medium, if eta-squared varies more than .14  then the effect size is large(Field, Miles & Field, 2012).
+
+```{r, warning=FALSE}
+# using Parametric Test
+dfstudt<-data.frame(student_data)
+dfstudt
+
+dfstudt$studytime.p <- mapvalues(dfstudt$studytime.p, from = c(1,2,3,4), to = c("less2", "2to5h","5to10","more10"))
+dfstudt$studytime.m <- mapvalues(dfstudt$studytime.m, from = c(1,2,3,4), to = c("less2", "2to5h","5to10","more10"))
+
+dfstudt <- dfstudt %>% filter(pG3>0,mG3>0)
+dfstudt <-dfstudt %>% mutate(pG12,mG12)
+dfstudt
+
+# Descriptive statistics by study time status
+describeBy(dfstudt$pG3,dfstudt$studytime.p)
+
+# check mean for each study time status group
+mean_study_p<-round(tapply(dfstudt$pG3,dfstudt$studytime.p,FUN =mean),digits = 2)
+mean_study_p
+
+# The plot shows how mean values of Final Grades change with study time status for Final Portuguese Grade
+plotmeans(dfstudt$pG3~dfstudt$studytime.p,digits = 2,
+          ccol = 'red',mean.labels = TRUE,xlab = 'Study Time Status',ylab = 'Final Portuguese Grade',
+          main='Plot of Final Portuguese Grade Means by Study Time Status')
+
+# Create boxplot
+boxplot(dfstudt$pG3~dfstudt$studytime.p,
+        main='Final Portuguese Grade Means by Study Time Status (mean is by black dot)',
+        xlab = 'Study Time Status',ylab = 'Final Portuguese Grade',col=c("#132B43","#56B1F7","#56B1F7","#132B43"))
+points(mean_study_p,col='black',pch=18)
+
+bartlett.test(dfstudt$pG3,dfstudt$studytime.p) 
+# p-value= 0.44 > .05, 
+# null hypothesis of the test is accepted i.e. the variance of different groups can be assumed to be equal.
+
+# Perform ANOVA test
+aov_study_p<-aov(dfstudt$pG3~dfstudt$studytime.p)
+summary(aov_study_p)
+
+tuk_study_p<-TukeyHSD(aov_study_p)
+tuk_study_p
+
+# Since the p-value for the pair of groups: '5to10-2to5h', 'less2-5to10', 'more10-less2' is less than 0.05, there is difference in the  Final Portuguese Grades mean values for these study time groups.
+
+
+plot(tuk_study_p)
+title(sub = "Comparisons Plot for Final Portuguese Grades and Study Time ")
+
+# Calculate effect size
+etaSquared(aov_study_p)
+
+```
+## Report of Difference Analysis
+
+By using  Bartlett's test, it was indicated equality of variance for Final Portuguese Grades for all groups of various Rate of Study Time (*K-squared* = 2.6735, *P* = 0.4447). A one-way between-groups variance analysing was considered to explore Final Portuguese Grade for students having Rate of Study Time. 
+Study time were divided into  four groups to show students Rate of Study Time (Group 1(less2) :  <2 hours; Group 2(2to5h) : 2 to 5 hours; Group 3(5to10) :5 to 10 hours; Group 4(more10) :>10 hours). 
+Post-hoc comparisons using the Tukey HSD test indicated that the mean score for study time Group 2 (*M* = 12.86 , *SD* = 2.47) was statistically different to that of Group 3 (*M* = 13.98, *SD* = 2.22); Group 4 (*M* = 13.54, *SD* = 2.92) was statistically different to that of Group 2 (*M* = 12.86 , *SD* = 2.47); Group 1 (*M* = 11.77, *SD* = 2.54) was statistically different to that of Group 3 (*M* = 13.98, *SD* = 2.22); Group 4 (*M* = 13.54, *SD* = 2.92) was statistically different to that of Group 1(*M* = 11.77, *SD* = 2.54) Since the p-value for the pair of groups: '5to10-2to5h', 'less2-5to10', 'more10-less2' is less than 0.05, there is difference in the  Final Portuguese Grades mean values for these study time groups.
+eta squared was 0.08 which shows the effect size is medium therefore there is a strong standardized mean difference for different groups. The results of examinations show there is we can reject the null hypothesis because there is a strong difference in Final Portuguese Grades for students of different Rate of Study Time.
+
+Hypothesis 4
+
+H0: There is no difference in Final Math Grade of students and their study time.
+HA: There is a difference in Final Math Grade of students and their study time.
+
+An alpha level .05 was considered and by  Cohen's conventions on effect size which is eta-squared, would be used for ANOVA Test.
+ By considering the Cohen, if the value of eta-squared varies around .01 then the effect size is low , if eta-squared varies around .06 then the effect size is medium, if eta-squared varies more than .14  then the effect size is large(Field, Miles & Field, 2012).
+ 
+```{r, warning=FALSE}
+
+# Descriptive statistics by study time status
+describeBy(dfstudt$mG3,dfstudt$studytime.m)
+
+# check mean for each study time status group
+mean_study_m<-round(tapply(dfstudt$mG3,dfstudt$studytime.m,FUN =mean),digits = 2)
+mean_study_m
+
+
+# The plot shows how mean values of Final Math Grades change with study time status 
+plotmeans(dfstudt$mG3~dfstudt$studytime.m,digits = 2,
+          ccol = 'red',mean.labels = TRUE,xlab = 'Study Time Status',ylab = 'Final Math Grade',
+          main='Plot of Final Math Grade Means by Study Time Status')
+
+# Create boxplot
+boxplot(dfstudt$mG3~dfstudt$studytime.m,
+        main='Final Math Grade Means by Study Time Status (mean is by black dot)',
+        xlab = 'Study Time Status Group',ylab = 'Final Math Grade',col=c("#132B43","#56B1F7","#56B1F7","#132B43"))
+points(mean_study_p,col='black',pch=18)
+
+# Bartlett test of homogeneity of variances
+bartlett.test(dfstudt$mG3,dfstudt$studytime.m) 
+# p-value= 0.79 > .05, 
+# null hypothesis of the test is accepted i.e. the variance of different groups can be assumed to be equal.
+
+
+# Perform ANOVA test
+aov_study_m<-aov(dfstudt$mG3~dfstudt$studytime.m)
+summary(aov_study_m)
+
+tuk_study_m<-TukeyHSD(aov_study_m)
+tuk_study_m
+# Since the p-value for the pair of groups: '5to10-2to5h' is less than 0.05, there is difference in the  Final Portuguese Grades mean values for one of the study time groups.
+plot(tuk_study_m)
+title(sub = "Comparisons Plot for Final Portuguese Grades and Study Time ")
+
+
+# Calculate effect size
+etaSquared(aov_study_m)
+
+```
+
+## Report of Difference Analysis
+
+By using Bartlett's test, it was indicated equality of variance for Final Math Grades for all groups of various Rate of Study Time (*K-squared* = 1.008, *P* = 0.7993). A one-way between-groups variance analysing was considered to explore Final Math Grade for students having Rate of Study Time. 
+Study time were divided into  four groups to show students Rate of Study Time (Group 1(less2) :  <2 hours; Group 2(2to5h) : 2 to 5 hours; Group 3(5to10) :5 to 10 hours; Group 4(more10) :>10 hours). 
+Post-hoc comparisons using the Tukey HSD test indicated that the mean score for study time Group 2 (*M* = 11.09, *SD* = 3.14) was statistically different to that of Group 3 (*M* = 12.59, *SD* = 3.16) Since the p-value for the pair of groups: '5to10-2to5h' is less than 0.05, there is the difference in the  Final Math Grades mean values for these study time groups.
+eta squared was 0.03 which shows the effect size is small therefore there is not a strong standardized mean difference for different groups. The results of examinations show there is we can not reject the null hypothesis because there is no strong difference in Final Portuguese Grades for students of different Rate of Study Time.
+
+Hypothesis 5:
+H0: There is no difference in Final grades of Portuguese major for a female and male student.
+HA: There is a difference in Final grades of Portuguese major for a female and male student.
+
+Check difference in Final Portuguese Grades for female and male students.
+
+```{r, warning=FALSE, fig.width=10, fig.align='center'}
+
+# Descriptive statistics by Medication to help you sleep
+stsex<-as.factor(dfstudt$sex)
+stpG3<-dfstudt$pG3
+describeBy(dfstudt$pG3,dfstudt$sex)
+
+#Conduct Levene's test for homogeneity of variance in library car
+ltest<-car::leveneTest(stpG3 ~ stsex, data=dfstudt)
+#Pr(F) is your probability
+ltest
+
+#Conduct the t-test from package stats
+#You can use the var.equal = TRUE option to specify equal variances and a pooled variance estimate
+stats::t.test(stpG3 ~ stsex,var.equal=TRUE,data=dfstudt)
+#Effect Size
+
+effsize::cohen.d(stpG3, stsex ,alpha= 0.05, na.rm=TRUE)
+# effet size=0.39 large difference
+```
+Report of Analysis
+
+A Levene's test was conducted and indicated equality of variance for Final Portuguese Grades for both groups of sex (*F-value* = 3.083, *P* = .079).  t-test analysis of variance was conducted to explore Final Portuguese Grades for female and male. students were divided into female and male (Group 1: F; Group  2: M). For Portuguese final grade a statistically significant difference ,the scores has been found for female (*M*=11.13,*SD*= 3.25 )and for male(*M*= 12.1, *SD*=3.23) and (t(338)=3.670, p < 0.001). The effect size, calculated using Cohen's d which was the samll size (0.39) that implies there is not a strong standardised mean difference for both groups. The test results indicate there is evidence to reject the null alternative hypothesis that there is no difference in Final Portuguese Grades for female and male students.
+
+
+
+Hypothesis 6:
+H0: There is no difference in Final grades of Math major for a female and male student.
+HA: There is a difference in Final grades of Math major for a female and male student.
+
+Check difference in Final Math Grades for female and male students.
+
+```{r, warning=FALSE, fig.width=10, fig.align='center'}
+
+# Descriptive statistics by Medication to help you sleep
+stsex<-as.factor(dfstudt$sex)
+stmG3<-dfstudt$mG3
+describeBy(dfstudt$mG3,dfstudt$sex)
+#Conduct Levene's test for homogeneity of variance in library car
+ltest<-car::leveneTest(stmG3 ~ stsex, data=dfstudt)
+#Pr(F) is your probability
+ltest
+
+#Conduct the t-test from package stats
+#You can use the var.equal = TRUE option to specify equal variances and a pooled variance estimate
+stats::t.test(stmG3 ~ stsex,var.equal=TRUE,data=dfstudt)
+#Effect Size
+
+effsize::cohen.d(stmG3, stsex ,alpha= 0.05, na.rm=TRUE)
+# effet size=0.39 large difference
+```
+
+Report of Analysis
+
+A Levene's test was conducted and indicated equality of variance for Final Math Grades for both groups of sex (*F-value* = .076, *P* = .783).  t-test analysis of variance was conducted to explore Final Portuguese Grades for female and male. students were divided into female and male (Group 1: F; Group  2: M). For Portuguese final grade a statistically significant difference ,the scores has been found for female (*M*=11.13,*SD*= 3.25 )and for male(*M*= 12.1, *SD*=3.23) and (t(338)=2.74, p < 0.01). The effect size, calculated using Cohen's d was the small size (0.39) which implies there is not a strong standardised mean difference for both groups. The test results indicate there is evidence to reject the null alternative hypothesis that there is no difference in Final Math Grades for female and male students.
+
+#-----------------------------------------------------------------------------------------------------------
+
+Linear regression
+Linear regression tries to develop a model that can demonstrate the relationship between two variables by fitting a linear equation to observed data. One variable is considered to be an explanatory variable, and the other is considered to be a dependent variable [http://www.stat.yale.edu/Courses/1997-98/101/linreg.htm]
+Linear regression is one of the basic regression models in machine learning. Linear regression models consist of a predictor variable and a dependent variable related to each other. The two variables are linearly related to each other. In case the data involves more than one independent variable, then linear regression is called multiple linear regression models.
+This is a simple form of linear regression model:
+
+y=mx+c+e
+
+In the above equation, “m” is the slope of the line, “c” variable is an intercept and “e” variable shows the error in the model. We can quantify how good a linear regression model is by comparing our linear model to the most basic reference model, which is called the mean, to see how much extra explanation of the variance in the outcome variable we get.
+
+
+Logistic Regression:
+Logistic regression is one type of regression analysis model which is used when the dependent variable is discrete. This means the target variable can have only two values and a sigmoid curve demonstrates the relationship between the target variable and the independent variable. A Logit function is used in a Logistic Regression model to measure the relationship between the target variable and the independent variable. 
+Logistic regression in its core is a statistical model that uses a logistic function to model a binary dependent variable. Basically, a binary logistic model usually has a dependent variable with two possible values such as pass/fail which is represented by an indicator variable, where the two values are labelled "0" and "1".
+Following equation shows a logistic regression model:
+
+logit(p) = ln(p/(1-p)) = b0+b1X1+b2X2+b3X3….+bkXk
+
+where the “p” variable is the probability of occurrence of features
+
+
+
+Dummy Variable
+Most variables that are used in our models are categorical. In the previous examples, we used some categorical variables (e.g. sex) as a predictor but did not explain it’s treatment. Since categorical variables don’t have a scale, we cannot increase or decrease the variable, unlike continuous variables.
+
+A dummy variable or indicator variable is a numeric variable that represents categorical data, such as gender, race, etc. Basically, a dummy variable is quantitative. The range of values is small, meaning they can take on only two quantitative values. As a practical matter, regression results are easiest to interpret when dummy variables are limited to two specific values, 1 or 0. Usually, 1 shows the presence of a qualitative attribute and 0 shows the absence. Machine learning models developed using dummy variables assume that the gap between variables is constant but we may find there is an intersection point for the lines representing each group in our model.
+
+In the simplest form, we would use 0 or1 dummy variable where a record is given a value of 0 if they are in the control group or a 1 if they are in the treated group. When a categorical variable has been captured as a dummy variable, the dummy variable then can be used in a regression model just like any other quantitative variables. Dummy variables can help us to use a single regression equation to represent multiple groups.
+
+Dummy Code:
+```{r}
+dfmodel<-data.frame(student_data)
+dfmodel
+dfmodel <- dfmodel %>% filter(pG12>0,mG12>0,pG3>0,mG3>0)
+dfmodel
+
+dfmodel$sex <- mapvalues(dfmodel$sex, from = c("F", "M"), to = c(0,1))
+
+dfmodel
+```
+
+
+#### Build the linear regression models
+###  model 1 is a simple linear regression of final Portuguese grade can be predicted by Average previous grades and study time more than 10 hour.
+
+```{r}
+
+model1=lm(dfmodel$pG3~dfmodel$pG12)
+anova(model1)
+summary(model1)
+
+stargazer(model1, type="text") #Tidy output of all the required stats
+plot(model1)
+#Check assumptions
+# List of   residuals
+resid(model1)
+#A density plot of the residuals
+plot(density(resid(model1)))
+# leverage plots
+leveragePlots(model1) 
+#Cooks distance
+cooks.distance(model1)
+#Plot Cooks distance
+plot(cooks.distance(model1), ylab="Cook's statistic")
+# none of the values is greater than 1 so no influential values
+
+```
+#### Report of Linear Modelling Analysis
+
+A linear regression analysis was conducted to determine whether Final Portuguese gradecan be predicted by averege of previous averege Portuguese grades . A significant regression equation was found (*F(1,338)*= 1343.7, *p*= 2.2e-16) and (p<0.001), with an Multiple R-squared= 0.799
+
+Examination of the histogram, normal P-P plot of standardised residuals and the scatterplot of the dependent variable, final Portuguese grades, and standardised residuals showed that no outliers existed and the residuals followed normal distribution. Also, examination of the standardised residuals showed that none of the values was outside the standard range (95% within limits of -3.29 to +3.29) as the minimum and maximum values are -9.5 and 5.49 respectively further affirming that there were no outliers. Also, none of the  Cook's distances were found to be more than 1, hence there are no influential values.
+
+Because all the assumptions for the model 1 have been proven true and 79.9% of the variance in final Portuguese grade is explained by the considered predictors. On checking the significance levels for each of the main terms (in this case the coefficients associated with the pG12), we found that there is evidence that just pG12 is adding something to the model (this statistically significant as p<.05). Hence, these statistical values provide enough evidence to reject that null hypothesis which is no significant prediction of final Portuguese grades with averege of previous averege Portuguese grades.
+
+
+
+```{r}
+
+model2=lm(dfmodel$pG3~dfmodel$pG12+dfmodel$sex)
+stargazer(model1, model2, type="text") #Quick model comparison
+anova(model2)
+summary(model2)
+stargazer(model1, type="text") #Tidy output of all the required stats
+plot(model2)
+#Check assumptions
+# List of   residuals
+resid(model2)
+#A density plot of the residuals
+plot(density(resid(model2)))
+# leverage plots
+leveragePlots(model2) 
+#Cooks distance
+cooks.distance(model2)
+#Plot Cooks distance
+plot(cooks.distance(model2), ylab="Cook's statistic")
+# none of the values is greater than 1 so no influential values
+
+# Collinearity
+vifmodel<-vif(model2)
+vifmodel
+# value < 2.5 not problem
+1/(vifmodel)
+# values > .4 not problem
+```
+
+#### Report of Linear Modelling Analysis
+
+A multiple linear regression analysis was conducted to determine if student gender and averege of previous  Portuguese grades can predict Final Portuguese grade. A significant regression equation was found (*F(2,337)*= 675.7, *p*= 2.2e-16) and (p<0.001), with an Multiple R-squared= 0.800
+
+Examination of the histogram, normal P-P plot of standardised residuals and the scatterplot of the dependent variable, final Portuguese grades, and standardised residuals showed that no outliers existed and the residuals followed normal distribution. Also, examination of the standardised residuals showed that none of the values was outside the standard range (95% within limits of -3.29 to +3.29) as the minimum and maximum values are -9.42 and 5.38 respectively further affirming that there were no outliers. Also, none of the  Cook's distances were found to be more than 1, hence there are no influential values.
+
+
+Examination for multicollinearity showed that the tolerance and variance influence factor measures were within acceptable levels (tolerance >0.4, VIF <2.5 ) as outlined in Tarling (2008). The scatterplot of standardised residuals showed that the data met the assumptions of homogeneity of variance and linearity. The data also meets the assumption of non-zero variances of the predictors.
+
+Since all the assumptions for the model have been proven true and 80% of the variance in final Portuguese grade is explained by the considered predictors. On checking the significance levels for each of the main terms (in this case the coefficients associated with the constant, pG12), we found that there is evidence that each of these terms are adding something to the model (they are statistically significant as p<.05). Hence, these statistical values provide enough evidence to reject that null hypothesis that there will be no significant prediction of final Portuguese grades bystudent gender and averege of previous  Portuguese grades .
+
+
+
+model 3 logistic regression
+ students gender is a parameter for determination can be effected on the final Portuguese grade and study time
+```{r}
+# Create the model.
+model3 <- glm(dfmodel$sex ~ dfmodel$pG3+dfmodel$studytime.p, data = dfmodel, family = "binomial")
+summary(model3)
+lmtest::lrtest(model3)
+Predict <- predict(model3, type = "response")
+
+tapply(Predict, dfmodel$sex, mean)
+
+
+## CIs using profiled log-likelihood
+confint(model3)
+
+## CIs using standard errors
+confint.default(model3)
+
+
+## odds ratios only
+exp(coef(model3))
+
+## odds ratios and 95% CI
+exp(cbind(OR = coef(model3), confint(model3)))
+
+
+# Generate ROC Curves
+library(ROCR)
+ROC_pred = prediction(Predict, dfmodel$sex)
+ROC_perf = performance(ROC_pred, "tpr", "fpr")
+# Adding threshold labels
+plot(ROC_perf, colorize=TRUE, print.cutoffs.at = seq(0,1,0.1), text.adj = c(-0.2, 1.7))
+abline(a=0, b=1)
+
+
+auc_train <- round(as.numeric(performance(ROC_pred, "auc")@y.values),2)
+legend(.8, .2, auc_train, title = "AUC", cex=1)
+
+head(predict(model3, type = "response"))
+pred <- ifelse(predict(model3, type = "response") > 0.5, "Yes", "No")
+head(pred)
+
+
+Pred <- predict(model3, type = "response")
+# Convert probabilities to values using the below
+## Based on ROC curve above, selected a threshold of 0.5
+tab <- table(dfmodel$sex, Pred > 0.5)
+tab
+
+accuracy <- round(sum(diag(tab))/sum(tab),2)
+sprintf("Accuracy on data set is %s", accuracy)
+
+ROCRPredTest = prediction(Pred, dfmodel$sex)
+auc = round(as.numeric(performance(ROCRPredTest, "auc")@y.values),2)
+auc
+```
+
+
+
+
+
+
+
+
